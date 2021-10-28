@@ -1,0 +1,541 @@
+Spring Boot, Querydsl 사용 시 Gralde 설정 방법
+
+build.gradle 설정
+
+//Plugin을 추가
+plugins {
+    id 'org.springframework.boot' version '2.2.5.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'java'
+
+    //querydsl 추가
+    id "com.ewerk.gradle.plugins.querydsl" version "1.0.10"
+
+}
+
+//querydsl 의존성 추가
+dependencies {
+     ...
+    implementation 'com.querydsl:querydsl-jpa'
+     ...
+}
+
+Querydsl이 생성하는 QClass들의 경로를 설정한다.
+
+//querydsl 추가 시작
+def querydslDir = "$buildDir/generated/querydsl"
+
+querydsl {
+    jpa = true
+    querydslSourcesDir = querydslDir
+}
+
+sourceSets {
+    main.java.srcDir querydslDir
+}
+
+configurations {
+    querydsl.extendsFrom compileClasspath
+}
+
+compileQuerydsl {
+    options.annotationProcessorPath = configurations.querydsl
+}
+//querydsl 추가 끝
+
+설정이 제대로 되면 Gradle task에 아래처럼 compileQuerydsl 이 생긴다.
+
+
+------------------------------------------------------------------------------------------------------------------------
+
+BaseEntity symbol 에러 발생시 해결 방법
+File - Settings - Build, Execution, Deployment - Compiller - Annotation Processors
+1) Enable Annotation Processors 체크
+2) Module output directory 체크
+3) default 폴더에 옮기기
+출처: https://bgpark.tistory.com/157
+
+------------------------------------------------------------------------------------------------------------------------
+
+영속성 컨텍스트란?
+- 엔티티를 영구 저장하는 환경
+- 애플리케이션과 데이터베이스 사이에서 객체를 보관하는 가상의 데이터베이스 같은 역할
+- 엔티티 매니저를 통해 엔티티를 저장하거나 조회하면 엔티티 매니저는 영속성 컨텍스트에 영속성 컨텍스트에 엔티티를 관리하고 보관한다.
+
+영속성 컨텍스트의 특징
+- 엔티티 매니저를 생성할 때 하나 만들어진다.
+- 엔티티 매니저를 통해서 영속성 컨텍스트에 접근하고 관리할 수 있다.
+- 영속성 컨텍스트는 엔티티를 식별자 값으로 구분, 따라서 영속 상태는 식별자 값이 반드시 있어야 한다.
+
+엔티티의 생명주기
+- 비영속(new/transient): 영속성 컨텍스트와 전혀 관계가 없는 상태
+- 영속(managed): 영속성 컨텍스트에 저장된 상태
+- 준영속(detached): 영속성 컨텍스트에 저장되었다가 분리된 상태
+- 삭제(removed): 삭제된 상태
+
+비영속 - 엔티티 객체를 생성했지만 아직 영속성 컨텍스트에 저장하지 않은 상태
+예) Member member = new Member();
+
+영속 - 엔티티 매니저를 통해서 영속성 컨텍스트에 저장한 상태를 말하며 영속성 컨텍스트에 의해 관리
+예) em.persist(member);
+
+준영속 - 영속성 컨텍스트가 관리하던 영속 상태의 엔티티 더 이상 관리하지 않으면 준영속 상태
+예) em.detach(member); // 엔티티를 영속성 컨텍스트에서 분리해 준영속 상태로 만든다.
+예) em.claer(); // 영속성 컨텍스트를 비워도 관리되던 엔티티는 준영속 상태가 된다.
+예) em.close(); /영속성 컨텍스트를 종료해도 관리되던 엔티티는 준영속 상태가 된다.
+
+삭제 - 엔티티를 영속성 컨텍스트와 데이터베이스에서 삭제
+예) em.remove(member);
+
+------------------------------------------------------------------------------------------------------------------------
+
+EL(Expression language)란?
+
+EL은 Expression language의 약자로 JSP 2.0 스펙에 추가된 개념이다.
+원래는 JSTL 1.0 규약에 소개된 내용으로 자바 코들르 대신해 실행시간에 태그의 속성 값을 지정하는 역활을 했었습니다.
+초기의 EL은 JSTL의 액션 태그에서만 작동하는 문제가 있었는데,
+JSP 2.0 부터는 JSP 컨테이너가 EL 표현식을 해석할 수 있게 도어 표준 액션 태그, 커스텀 태그, 템플릿 데이터와 같이 자바코드를 사용해야 했던 모든 곳에 EL을 사용할 수 있습니다.
+
+EL에서  eq, ne, lt, gt, le, ge 정리
+
+== 또는 eq
+!= 또는 ne
+< 또는 lt
+> 또는 gt
+<= 또는 le
+>= 또는 ge
+
+------------------------------------------------------------------------------------------------------------------------
+@Data 에 포함되어 있는 lombok은 다음과 같다.
+
+@ToString
+@EqualsAndHashCode
+@Getter : 모든 필드
+@Setter : 정적 필드가 아닌 모든 필드
+@RequiredArgsConstructor
+
+------------------------------------------------------------------------------------------------------------------------
+
+[JAVA] 람다식(Lambda)의 개념 및 사용법
+람다함수란?
+람다 함수는 프로그래밍 언어에서 사용되는 개념으로 익명 함수(Anonymous functions)를 지칭하는 용어입니다.
+현재 사용되고 있는 람다의 근간은 수학과 기초 컴퓨터과학 분야에서의 람다 대수이다. 람다 대수는 간단히 말하자면 수학에서 사용하는 함수를 보다 단순하게 표현하는 방법입니다.
+
+람다의 특징
+람다 대수는 이름을 가질 필요가 없다. - 익명 함수 (Anonymous functions)
+두 개 이상의 입력이 있는 함수는 최종적으로 1개의 입력만 받는 람다 대수로 단순화 될 수 있다. - 커링 (Curring)
+
+익명함수?
+익명함수란 말그대로 함수의 이름이 없는 함수입니다. 익명함수들은 공통으로 일급객체(First Class citizen)라는 특징을 가지고 있습니다.
+이 일급 객체란 일반적으로 다를 객체들에 적용 가능한 연산을 모두 지원하는 개체를 가르킵니다. 함수를 값으로 사용 할 수도 있으며 파라메터로 전달 및 변수에 대입 하기와 같은 연산들이 가능합니다.
+
+람다의 장단점
+장점
+1. 코드의 간결성 - 람다를 사용하면 불필요한 반복문의 삭제가 가능하며 복잡한 식을 단순하게 표현할 수 있습니다.
+2. 지연연산 수행 - 람다는 지연연상을 수행 함으로써 불필요한 연산을 최소화 할 수 있습니다.
+3. 병렬처리 가능 - 멀티쓰레디를 활용하여 병렬처리를 사용 할 수 있습니다.
+
+단점
+1. 람다식의 호출이 까다롭습니다
+2. 람다 stream 사용 시 단순 for문 혹은 while문 사용 시 성능이 떨어집니다.
+3. 불필요하게 너무 사용하게 되면 오히려 가독성을 떨어 뜨릴 수 있습니다.
+
+람다의 표현식
+
+1. 람다는 매개변수 화살표(->) 함수몸체로 이용하여 사용 할 수 있습니다.
+2. 함수몸체가 단일 실행문이면 괄호{}를 생략 할 수 있습니다.
+3. 함수몸체가 return문으로만 구성되어 있는 경우 괄호{}를 생략 할 수 없습니다.
+
+//정상적인 유형
+() -> {}
+() -> 1
+() -> { return 1; }
+
+(int x) -> x+1
+(x) -> x+1
+x -> x+1
+(int x) -> { return x+1; }
+x -> { return x+1; }
+
+(int x, int y) -> x+y
+(x, y) -> x+y
+(x, y) -> { return x+y; }
+
+(String lam) -> lam.length()
+lam -> lam.length()
+(Thread lamT) -> { lamT.start(); }
+lamT -> { lamT.start(); }
+
+
+//잘못된 유형 선언된 type과 선언되지 않은 type을 같이 사용 할 수 없다.
+(x, int y) -> x+y
+(x, final y) -> x+y
+
+기존 자바 문법
+new Thread(new Runnable() {
+   @Override
+   public void run() {
+      System.out.println("Welcome Heejin blog");
+   }
+}).start();
+
+람다식 문법
+new Thread(()->{
+      System.out.println("Welcome Heejin blog");
+}).start();
+
+함수형 인터페이스
+@FunctionalInterface
+Functional Interface는 일반적으로 '구현해야 할 추상 메소드가 하나만 정의된 인터페이스'를 가리킵니다.
+자바 컴파일러는 이렇게 명시된 함수형 인터페이스에 두 개 이상의 메소드가 선언되면 오류를 발생시킵니다.
+
+//구현해야 할 메소드가 한개이므로 Functional Interface이다.
+@FunctionalInterface
+public interface Math {
+    public int Calc(int first, int second);
+}
+
+//구현해야 할 메소드가 두개이므로 Functional Interface가 아니다. (오류 사항)
+@FunctionalInterface
+public interface Math {
+    public int Calc(int first, int second);
+    public int Calc2(int first, int second);
+}
+
+함수형 인터페이스 람다 사용예제
+함수형 Interface 선언
+@FunctionalInterface
+interface Math {
+    public int Calc(int first, int second);
+}
+
+
+추상 메소드 구현 및 함수형 인터페이스 사용
+public static void main(String[] args){
+   Math plusLambda = (first, second) -> first + second;
+   System.out.println(plusLambda.Calc(4, 2));
+
+   Math minusLambda = (first, second) -> first - second;
+   System.out.println(minusLambda.Calc(4, 2));
+
+}
+
+실행결과
+6
+2
+
+
+Java에서 지원하는 java.util.function 인터페이스
+
+java.util.function Interface는 예제로 2가지만 설명 하고 있습니다.
+
+IntFunction<R>
+int 값의 인수를 받아들이고 결과를 생성하는 함수를 나타냅니다.
+
+사용 예제
+IntFunction intSum = (x) -> x+1;
+System.out.println(intSum.apply(1));
+실행결과
+2
+
+BinaryOperator<T>
+동일한 유형의 두 피연산자에 대한 연산을 나타내며 피연산자와 동일한 유형의 결과를 생성합니다.
+
+사용 예제
+BinaryOperator stringSum=(x, y)->x+" "+y;
+System.out.println(stringSum.apply("Welcome","Heejin blog"));
+실행결과
+Welcome Heejin blog
+
+
+그외 다양한 Interface 목록
+https://docs.oracle.com/javase/8/docs/api/java/util/function/package-summary.html
+
+
+Stream API
+Stream이란?
+Stream이란 다양한 데이터를 표준화된 방법으로 다루기 위한 라이브러리이다. 자바 8부터 추가된 Stream API는 다음과 같이 구성됩니다.
+
+example.stream().filter(x -> x < 2).count
+stream() <- 스트림생성
+filter < - 중간 연산 (스트림 변환) - 연속에서 수행 가능합니다.
+count <- 최종 연산 (스트림 사용) - 마지막에 단 한 번만 사용 가능합니다.
+
+Stream의 특징
+Stream은 데이터를 변경하지 않습니다.
+Stream은 1회용 입니다.
+Stream은 지연 연산을 수행합니다
+Stream은 병렬 실행이 가능합니다
+
+Stream의 종류
+ Stream <T>
+ 범용 Stream
+
+ IntStream
+ 값 타입이 Int인 Stream
+
+ LongStream
+ 값 타입이 Long인 Stream
+
+ DoubleStream
+ 값 타입이 Double인 Stream
+
+Stream의 중간 연산 명령어
+
+ Stream < T > distinct()
+ Stream의 요소 중복 제거
+
+ Stream < T > sorted()
+ Stream 요소 정렬
+
+ Stream < T > filter(Predicate < T > predicate)
+ 조건에 충족하는 요소를 Stream으로 생성
+
+ Stream < T > limit(long maxSize)
+ maxSize 까지의 요소를 Stream으로 생성
+
+ Stream < T > skip(ling n)
+ 처음 n개의 요소를 제외하는 stream 생성
+
+ Stream < T > peek(Consumer< T > action)
+ T타입 요소에 맞는 작업 수행
+
+ Stream < R > flatMap(Function< T, stream<? extends R>> Tmapper)
+ T타입 요소를 1:N의 R타입 요소로 변환하여 스트림 생성
+
+ Stream < R > map(Function<? super T, ? extends R> mapper)
+ 입력 T타입을 R타입 요소로 변환한 스트림 생성
+
+ Stream mapToInt(),mapToLong(),mapToDobule()
+ 만약 map Type이 숫자가 아닌 경우 변환하여 사용
+
+
+Stream의 최종 연산 명령어
+
+ void forEach(Consumer <? super T> action)
+ Stream 의 각 요소에 지정된 작업 수행
+ long count()
+ Stream 의 요소 개수
+
+ Optional < T > sum (Comparator <? super T> comparator)
+ Stream 의 요소 합
+
+ Optional < T > max (Comparator <? super T> comparator)
+ Stream 요소의 최대 값
+
+ Optional < T > min (Comparator <? super T> comparator)
+ Stream 요소의 최소 값
+
+ Optional < T > findAny()
+ Stream 요소의 랜덤 요소
+
+ Optional < T > findFirst()
+ Stream 의 첫 번째 요소
+
+ boolean allMatch(Pradicate < T > p)
+ Stream 의 값이 모두 만족하는지 boolean 반환
+
+ boolean anyMatch(Pradicate < T > p)
+ Stream 의 값이 하나라도 만족하는지 boolean 반환
+
+ boolean noneMatch(Pradicate < T > p)
+ Stream 의 값이 하나라도 만족하지않는지 boolean 반환
+
+ Object[] toArray()
+ Stream 의 모든 요소를 배열로 반환
+
+
+ reduce 연산
+
+ Stream 의 요소를 하나씩 줄여가며 계산한다.
+ - Optional < T > reduce(Binary Operator<T> accumulator)
+ - T reduce ( T identity, BinaryOperator<T> accumulator)
+ - <U> U reduce (U indentity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner)
+ - .reduce((x,y) -> x > y ? x : y );
+ - .reduce(1, (x,y) -> x * y);
+ - .reduce(0.0,
+   (val1, val2) -> Double.valueOf(val1 + val2 / 10),
+   (val1, val2) -> val1 + val2);
+
+ collector 연산
+ Stream의 요소를 수집하여 요소를 그룹화 하거나 결과를 담아 반환하는데 사용한다.
+ - Collectors.toList()
+ - Collectors.toSet()
+ - Collectors.toMap()
+ - Collectors.groupingBy
+ - Collectors.partioningBy
+ - Collectors.summarizingInt()
+
+Stream API 간단 예제
+
+사용 예제
+//Stream API를 이용한 간단한 짝수 판별
+IntStream.range(1, 11 ).filter(i-> i%2==0)
+      .forEach(System.out::println);
+실행 결과
+2
+4
+6
+8
+10
+
+사용 예제
+// 0~1000까지의 값 중 500이상이며 짝수이면서 5의 배수인 수의 합을 구하라
+System.out.println(
+      IntStream.range(0, 1001)
+            .skip(500)
+            .filter(i-> i%2==0)
+            .filter(i-> i%5==0)
+            .sum()
+);
+실행 결과
+38250
+
+출처 - https://khj93.tistory.com/entry/JAVA-%EB%9E%8C%EB%8B%A4%EC%8B%9DRambda%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B4%EA%B3%A0-%EC%82%AC%EC%9A%A9%EB%B2%95
+
+------------------------------------------------------------------------------------------------------------------------
+
+Java8 IntStream으로 반복하기
+출처 - https://m.blog.naver.com/myca11/221386518751
+
+------------------------------------------------------------------------------------------------------------------------
+
+[Stream] 필터링, 매핑( flatMapXX(), mapXX(), boxed(), distinct(), filter() ) 관련 스트림 메소드
+
+출처 - https://sas-study.tistory.com/242
+
+------------------------------------------------------------------------------------------------------------------------
+
+부트스트랩 모달창 예제
+https://getbootstrap.com/docs/4.2/components/modal/
+
+------------------------------------------------------------------------------------------------------------------------
+
+Spring MVC의 @ModelAttribute 어노테이션에 대한 개념 정리
+
+Spring MVC에서 @ModelAttribute을 메소드의 파라미터로 사용할 경우 프로그램이 어떤 식으로 돌아가는지를 정리하고자 한다.
+다른 어노테이션에 비해 @ModelAttribute는 내부적으로 돌아가는 부분이 많은 것 같다.
+즉 Spring framework이 내부에서 알아서 처리해 주는 부분이 다른 어노테이션에 비해 더  많은 것 같다.
+따라서 개발자의 손을 떠나 보이지 않는 가운데서 처리되는 부분에 대한 개념이 없다면 어둠 속에서 더듬이가 될수 밖에 없는 것이다.
+
+여기 다음과 같은 빈 클래스가 있다고 할때
+
+public class MemberInfo
+
+{
+     private int seq;
+     private String name;
+     private int age;
+
+     //이하 getter, setter는 생략
+}
+
+http://localhost:8080/member/info?name=Gildong&age=25seq=327
+와 같이 접속되어 들어올 때 Controller 클래스의 아래 메소드가 실행될 것이다.
+
+
+@Controller
+@RequestMapping("/member/*")
+public class MemberController
+{
+  ... 중 략 ...
+@RequestMapping(value = "/info", method=RequestMethod.GET)
+public void show(@RequestParam("seq") int seq, @ModelAttribute("myMEM") MemberInfo info, Model model)
+{
+
+     logger.info("####### info.getName() "+info.getName());
+     logger.info("####### info.getAge() "+info.getAge());
+
+     try {
+          //service.read(seq)가 MemberVO 객체를 반환한다고 할 경우
+          model.addAttribute(service.read(seq));
+     }catch(Exception e) {
+         e.printStackTrace();
+     }
+}
+
+  ... 후 략 ...
+
+}
+
+이 메소드가 실행되면 info.jsp가 자동으로 실행되게 된다. 따라서 info.jsp가 만들어져 있어야 되고 없으면 404 Not found 에러가 발생할 것이다.
+그리고 info.jsp의 아래 코드에서 결과가 나오게 될 것이다.
+
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="EUC-KR">
+<title>Insert title here</title>
+</head>
+
+<body>
+     <h3>회원 이름(info.name) : ${info.name }</h3> <%-- 여기서는 아무것도 안 나옴 --%>
+     <hr/>
+     <h3>회원 이름(myMEM.getName()) : ${myMEM.getName() }</h3>   <%-- 회원 이름이 정상적으로 출력된다. --%>
+     <h3>현재 이름(myMEM.name) : ${myMEM.name }</h3>             <%-- 회원 이름이 정상적으로 출력된다 --%>
+     <hr/>
+     <h3>회원 번호 : ${memberVO.seq }</h3>    <%-- 회원 번호가 정상적으로 출력된다 --%>
+</body>
+
+</html>
+
+
+JSP의 코드는 위의 내용이 전부이다.
+무엇이 어떻게 돌아가기에 http url로 들어온 회원 이름과 회원 번호가 Controller에 저장이되고 Controller에서 JSP로 특별하게 보내는 코드도 없어 보이는데 JSP 코드에서 저렇게 값이 정상적으로 출력이 된단 말인가?
+이것이 @ModelAttribute의 위력이고 편리함이면서 동시에 개발자를 더듬이로 만드는 측면이기도 하다.
+단순한 @ModelAttribute가 무슨 역할을 했단 말인가?
+
+@ModelAttribute 선언 후 자동으로 진행되는 작업들은 다음과 같다.
+     ① @ModelAttribute 어노테이션이 붙은 객체를 자동으로 생성한다.
+         위의 코드에서는 MemberInfo 클래스의 객체 info를 자동으로 생성한다.
+         이때 @ModelAttribute가 지정되는 클래스는 빈 클래스라야 한다.
+         즉 MemberInfo 클래스는 beans 클래스라야 한다.
+         그리고 getter와 setter가 명명 규칙에 맞게 만들어져 있어야 한다.
+
+   ② 생성된 오브젝트에(info) HTTP로 넘어 온 값들을 자동으로 바인딩한다.
+       위의 코드의 경우는 name=Gildong&age=25seq=327 이렇게 들어오는
+       name, age, seq의 값이 MemberInfo의 해당 변수의 setter를 통해서
+       해당 멤버 변수에로 binding된다.
+
+   ③ @ModelAttribute 어노테이션이 붙은 객체가(여기서는 MemberInfo 객체)
+       자동으로 Model 객체에 추가되고 따라서 MemberInfo 객체가 .jsp 뷰단까지 전달이 된다.
+
+
+이상의 작업이 개발자를 대신해서 Spring framework가 알아서 다 처리해 준다. 편리하긴하다.
+이때 @ModelAttribute() 괄호 안에 지정한 문자열(위의 경우에는 myMEM)의 의미를 알아야 한다.
+이 문자열의 이름으로(이것이 객체이다) Model 객체에 자동으로 추가가 되고 따라서 JSP 뷰단으로 안전하게 넘어가게 된다.
+즉 MemberInfo 객체가 Model 객체에 추가될 때 @ModelAttribute()의 괄호 안에 지정한 문자열의 이름으로 추가된다는 점이다.
+그리고 이 문자열 이름은 MemberInfo의 객체인 것이다.
+만일 @ModelAttribute()의 괄호 안에 아무런 문자열도 지정하지 않으면 JSP 페이지에서 MemberInfo 객체에 저장되어 있는 값을 사용할수가 없게 된다.
+
+보이지 않는 가운데서 내부적으로 Spring에 의해 처리되는 이상의 작업들로 인해 info.jsp에서 다음 코드가 유효하게 동작하는 것이다.
+
+<h3>회원 이름(myMEM.getName()) : ${myMEM.getName() }</h3>   <%-- 회원 이름이 정상적으로 출력된다. --%>
+<h3>현재 페이지(myMEM.name) : ${myMEM.name }</h3>            <%-- 회원 이름이 정상적으로 출력된다 --%>
+
+여기서 ${myMEM.getName()}과 ${myMEM.name}의 차이가 무엇인고 하면 전자의 경우는 MemberInfo의 메소드를 직접 호출해서 사용한 경우이고
+후자의 경우는 MemberInfo의 멤버 변수 name을 JSTL에서 사용하면 자동으로 name의 getter인 getName()이 호출되게 되는 것이다.
+
+
+출처: https://developer-joe.tistory.com/197
+
+------------------------------------------------------------------------------------------------------------------------
+
+Thymeleaf 간단 매뉴얼
+http://progtrend.blogspot.com/2019/05/thymeleaf.html
+
+------------------------------------------------------------------------------------------------------------------------
+
+jQuery / Method / .attr() - 속성(attribute)의 값을 가져오거나 속성을 추가하는 메서드
+https://www.codingfactory.net/10208
+
+------------------------------------------------------------------------------------------------------------------------
+
+자바스크립트에는, 대화상자로 alert, confirm, prompt가 있습니다.
+
+1) alert() : 단순히 메시지 전달
+2) confirm() : 확인 , 취소에 따라 true, false를 반환
+3) prompt() : 알림창에서 사용자가 입력한 값을 받아서 리턴
+
+------------------------------------------------------------------------------------------------------------------------
